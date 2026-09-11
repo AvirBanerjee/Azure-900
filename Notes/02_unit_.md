@@ -126,6 +126,7 @@ Management Groups (can be nested)
         │
      Resources
 ```
+![Resource Hierarchy](./images/Rh.png)
 
 **Inheritance rule:** Settings applied at a higher level (such as a management group) automatically flow down to every level beneath it (subscriptions → resource groups → resources), unless explicitly overridden at a lower level.
 
