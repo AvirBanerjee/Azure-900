@@ -14,3 +14,13 @@ sudo ss -tulpn | grep:80
 
 --check server running
 curl http://localhost:80
+
+Access from mac cmd :-
+ssh command from az VM 
+
+bypass
+chmod 400 <path of your pem file>
+
+Access from Windows cmd :-
+
+ssh -i "<path of your shh file>" azureuser@<ip of your virtual machine>
