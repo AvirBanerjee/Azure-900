@@ -18,9 +18,14 @@ curl http://localhost:80
 Access from mac cmd :-
 ssh command from az VM 
 
-bypass
+bypass :-
 chmod 400 <path of your pem file>
 
 Access from Windows cmd :-
-
 ssh -i "<path of your shh file>" azureuser@<ip of your virtual machine>
+
+Copy file from local machine to Az VM:-
+scp -i "<path of your shh file>" "<path of file to be coppied" azureuser@<ip of your virtual machine>:<where to copy ex: /home/azureuser>
+
+run your file in VM:-
+sudo cp index.html /var/www/html
