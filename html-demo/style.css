@@ -1,0 +1,28 @@
+body{
+    background-color: #3a3a3a;
+    color: beige;
+    padding: 0;
+    margin: 0;
+}
+form{
+    height: 200px;
+    width: 200px;
+    background-color: aliceblue;
+    color: black;
+    margin-left: 450px;
+    margin-top: 150px;
+    padding: 40px;
+    border-radius: 20px;
+}
+h1{
+    text-align: center;
+}
+input{
+    margin: 10px;
+}
+button{
+    margin-left: 50px;
+}
+button{
+    background-color: rgb(165, 165, 232);
+}
