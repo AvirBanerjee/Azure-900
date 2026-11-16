@@ -1,197 +1,396 @@
 # AZ-900: Microsoft Azure Fundamentals
-## Unit 4 — Cost Management, Governance, Management Tools, Monitoring, and Security
+## Unit 4 — Security, Governance, and Compliance
 
-**Exam Domain Covered:** Describe Azure management and governance (approximately 30–35% of the AZ-900 exam), together with the remaining items of Describe Azure identity, access, and security (Conditional Access, Zero Trust, defense in depth, Microsoft Defender for Cloud).
+**Course Outcome Covered:** CO4 — Explain Azure security, governance and compliance mechanisms.
 
-**Note on scope:** Units 1–3 covered the cloud concepts domain and the architecture and services domain in full, plus Microsoft Entra ID, authentication methods, and RBAC. This unit completes the AZ-900 blueprint. It covers cost management tools, governance and compliance features, Azure management tools, monitoring tools, and the security fundamentals the exam tests. Topics that go beyond a typical syllabus wording but are explicitly tested on AZ-900 are marked **(AZ-900 Add-on)**.
+**Note on scope:** The syllabus lists Azure Security Concepts, Zero Trust Principles, Multifactor Authentication, Conditional Access, Azure Policy, Resource Locks, Tagging, Compliance Offerings, and Microsoft Purview Overview. 
 
-**Prerequisites used in this unit:** Resource hierarchy and Resource Groups (Unit 2, Sections 4–7), Azure Resource Manager (Unit 2, Section 8), Autoscale (Unit 1, Section 11), Availability Zones and Region Pairs (Unit 2), Microsoft Entra ID, MFA and RBAC (Unit 3, Sections 12–14).
+
+**Prerequisites used in this unit:** Shared Responsibility Model (Unit 1, Section 5), Resource Hierarchy and Resource Groups (Unit 2, Sections 4–7), Azure Resource Manager (Unit 2, Section 8), NSGs, Azure Firewall and Application Gateway WAF (Unit 3), Microsoft Entra ID, authentication methods, and RBAC (Unit 3, Sections 12–14).
 
 ---
 
-# PART A — COST MANAGEMENT
+# PART A — AZURE SECURITY CONCEPTS
 
-## 1. Factors That Affect Azure Costs
+## 1. Azure Security Concepts
 
-Azure uses consumption-based pricing (Unit 1, Section 8), so the bill is the sum of many metered usage items. The exam expects you to know which factors change the price of a resource.
+**Cloud security** is the set of policies, controls, and technologies used to protect data, applications, and infrastructure in the cloud. Security in Azure is a **shared effort** between Microsoft and the customer (Unit 1, Section 5).
 
-| Factor | How it affects cost | Example |
+### 1.1 Security Responsibility Recap
+
+| Responsibility | IaaS | PaaS | SaaS |
+|---|---|---|---|
+| Physical datacenter, network, and hosts | Microsoft | Microsoft | Microsoft |
+| Operating system and patching | Customer | Microsoft | Microsoft |
+| Network controls (NSG rules, firewalls) | Customer | Shared | Microsoft |
+| Applications | Customer | Customer | Microsoft |
+| Identity and access management | Customer | Customer | Customer |
+| Data and its classification | Customer | Customer | Customer |
+| Endpoints (devices used to reach the cloud) | Customer | Customer | Customer |
+
+**Key rule:** Data, identity, and endpoints are always the customer's responsibility. Microsoft secures the cloud infrastructure; the customer secures what they put in it and who can access it.
+
+### 1.2 The CIA Triad
+
+Security goals are commonly described by three properties:
+
+| Property | Meaning | Azure example |
 |---|---|---|
-| **Resource type** | Each resource type is billed by different meters, and the configuration chosen changes the rate | A larger VM size costs more per hour than a smaller one; a storage account using GRS costs more than one using LRS |
-| **Consumption (usage)** | Pay for what is used: compute hours, GB stored, number of transactions | A VM that runs 9 hours a day is billed for 9 hours, not 24 |
-| **Maintenance** | Resources that are left running or provisioned but idle still cost money | A forgotten test VM that is stopped but not deallocated, or an unattached managed disk, continues to cost |
-| **Geography (region)** | The same resource has different prices in different regions because local infrastructure and operating costs differ | A VM in one region can be cheaper than the same VM size in another region |
-| **Network traffic (bandwidth)** | Data moving into Azure (inbound) is generally free; data leaving Azure (outbound) to the internet or between regions is charged | Serving large video files from Blob Storage to users incurs outbound transfer charges |
-| **Subscription type** | Pay-as-you-go, Enterprise Agreement, and Cloud Solution Provider subscriptions can have different pricing terms and discounts | An enterprise with an agreement may get negotiated rates |
-| **Azure Marketplace** | Third-party products from the Marketplace are billed according to the publisher's pricing, in addition to the underlying Azure resources | A pre-configured Marketplace VM image with licensed software adds a software charge on top of the VM compute cost |
+| **Confidentiality** | Only authorized parties can read data | RBAC, encryption of storage, MFA |
+| **Integrity** | Data is not altered by unauthorized parties | Resource locks, access control on write operations |
+| **Availability** | Data and services are accessible when needed | Availability Zones, redundancy, load balancing (Units 1–3) |
 
-**Example:**
-A company deploys the same web application in two regions. Both VMs use the same size, but the East US deployment costs less per hour than the one in a region with higher local operating costs. In addition, the second deployment is configured with GRS storage and serves heavy outbound traffic, so its storage and bandwidth charges are also higher. Region, redundancy choice, and outbound data transfer together explain the difference in the monthly bill.
+### 1.3 Defense in Depth (AZ-900 Add-on)
 
-**Exam Tip:** Questions often ask which action reduces cost. Typical correct answers are: choose a cheaper region where latency and data-residency rules allow, shut down (deallocate) unused VMs, select the right storage redundancy and access tier, and reduce outbound data transfer.
+**Defense in depth** is a layered security strategy. Instead of relying on one protection, several independent layers are used, so that if one layer is breached, the next layer still protects the data. The goal is to slow an attacker down and limit the damage.
 
----
+**The seven layers (outermost to innermost):**
 
-## 2. Azure Pricing Calculator
-
-The **Azure Pricing Calculator** is a free, web-based tool used to **estimate the cost of Azure services before deploying them**.
-
-**How it works:**
-- The user adds Azure products (VMs, App Service, storage, databases) to an estimate.
-- For each product the user selects options such as region, size or tier, redundancy, and expected usage (for example, hours per month).
-- The calculator produces an estimated monthly cost and allows the estimate to be saved, shared, or exported.
-
-**Key point:** The Pricing Calculator is about **future costs of new Azure workloads**. It does not read actual spending.
-
-**Example:**
-A team plans to run an App Service plan, an Azure SQL Database, and a storage account with GRS redundancy. Before creating any resource, it adds all three to the Pricing Calculator, selects the planned region and tiers, and exports an estimate to include in the project budget request.
-
----
-
-## 3. Total Cost of Ownership (TCO) Calculator
-
-The **TCO Calculator** estimates the **cost savings of migrating on-premises workloads to Azure** by comparing the cost of running the workloads on-premises with the cost of running them in Azure over a chosen time frame (such as 1, 3, or 5 years).
-
-**How it works:**
-- The user describes the current on-premises environment: servers (physical or virtual), databases, storage, and network.
-- The user can adjust assumptions such as power, cooling, IT labor, and hardware costs.
-- The calculator produces a side-by-side comparison of on-premises cost versus Azure cost, showing the estimated savings. This reflects the CapEx-to-OpEx shift from Unit 1, Section 2.
-
-**Note:** Azure Migrate (Unit 3, Section 9) also offers a business-case capability that builds a similar cost comparison from an inventory discovered in the actual environment. AZ-900 still tests the TCO Calculator concept.
-
-**Pricing Calculator vs TCO Calculator (a frequent exam distinction):**
-
-| Feature | Pricing Calculator | TCO Calculator |
+| Layer | What it protects against | Azure features from this course |
 |---|---|---|
-| Question it answers | "How much will this Azure workload cost?" | "How much will we save by moving from on-premises to Azure?" |
-| Input | Azure services and configuration the user plans to use | The existing on-premises infrastructure |
-| Output | Estimated Azure cost | On-premises cost vs Azure cost over time, with savings |
-| Typical user moment | Planning a new deployment | Building the business case for migration |
+| 1. Physical security | Physical access to datacenters | Microsoft-managed datacenters (always the provider's responsibility) |
+| 2. Identity and access | Unauthorized sign-in and excess permissions | Microsoft Entra ID, MFA, Conditional Access, RBAC |
+| 3. Perimeter | Large-scale attacks from outside the network | Edge protections such as DDoS protection |
+| 4. Network | Unauthorized communication between resources | NSGs, Azure Firewall, subnet segmentation, VNet design |
+| 5. Compute | Exposed or unpatched servers | Patching VMs, limiting open management ports |
+| 6. Application | Insecure application code and web attacks | Secure coding, Web Application Firewall on Application Gateway |
+| 7. Data | Theft or exposure of stored information | Encryption, access control, storage redundancy and backup |
 
 **Example:**
-A university runs 40 on-premises servers in its own datacenter and is deciding whether to migrate. It enters the server counts, storage, and network details into the TCO Calculator, which shows the estimated three-year cost of staying on-premises against the estimated cost on Azure. After the decision is made, the team uses the Pricing Calculator to estimate the exact Azure services it will deploy.
+An attacker steals an employee's password. Because the company uses defense in depth, the identity layer (MFA) stops the sign-in. Even if it had not, the network layer (an NSG on the database subnet that only accepts traffic from the web subnet) would block direct access to the database, and encryption at the data layer would protect the stored records.
+
+### 1.4 Microsoft Defender for Cloud (AZ-900 Add-on)
+
+**Microsoft Defender for Cloud** is a cloud-native security service that gives **security posture management** and **threat protection** for workloads in Azure, on-premises, and other cloud providers.
+
+| Capability | Meaning |
+|---|---|
+| **Security posture management** | Continuously assesses resources against security best practices, produces prioritized **recommendations**, and calculates a **Secure Score**, a percentage showing how well the environment is secured |
+| **Workload threat protection** | Detects and alerts on threats against resources such as VMs, storage accounts, databases, and containers |
+| **Multi-environment coverage** | Covers Azure, on-premises servers, and other clouds |
+| **Regulatory compliance view** | Shows how resources measure against compliance standards (see Section 10) |
+
+**Example:**
+Defender for Cloud scans a subscription and reports that a VM has a management port open to the internet and that a storage account allows public access. The Secure Score is low and a prioritized list of fixes is shown. After the team closes the port and restricts the storage account, the Secure Score rises.
+
+### 1.5 Other Azure Security Services to Recognize (AZ-900 Add-on)
+
+| Service | Purpose |
+|---|---|
+| Azure DDoS Protection | Protects public-facing resources from distributed denial-of-service attacks (perimeter layer) |
+| Azure Key Vault | Securely stores secrets, keys, and certificates so they are not placed in application code |
+| Azure Firewall / NSG | Network traffic filtering (Unit 3, Sections 5 and 6.1) |
+
+**Exam Tip:** When a question asks which tool gives a **Secure Score and recommendations** for the whole environment, the answer is Microsoft Defender for Cloud.
 
 ---
 
-## 4. Azure Cost Management + Billing
+# PART B — ZERO TRUST
 
-**Microsoft Cost Management** (within **Cost Management + Billing**) is the tool used to **monitor, analyze, and control the actual spending on Azure resources** after they are deployed.
+## 2. Zero Trust Principles
 
-**Key capabilities:**
-- **Cost analysis:** Break down actual spending by resource, resource group, subscription, service, location, or tag.
-- **Budgets:** Set a spending limit for a scope (such as a subscription or resource group) for a period.
-- **Alerts:** Notify users by email or action when spending reaches defined percentages of a budget, or when a forecast shows the budget will be exceeded.
-- **Recommendations:** Surface cost-saving suggestions, such as resizing or shutting down underused VMs (the same cost recommendations are surfaced by Azure Advisor, Section 15).
+**Zero Trust** is a security model that assumes **no user, device, application, or network location is trusted by default**, even inside the corporate network. Every access request is verified before it is allowed. The short form is: **"never trust, always verify."**
 
-**Important exam point:** A budget **does not stop resources or block spending by default**. It sends notifications. Stopping resources automatically requires extra automation that is triggered by the alert.
+### 2.1 Traditional Perimeter Model vs Zero Trust
 
-**Example:**
-A department sets a monthly budget of a fixed amount on its Dev subscription, with alerts at 80 percent and 100 percent. When actual spending reaches 80 percent, the department's administrators receive an email. Using cost analysis grouped by resource group, they find that one forgotten test VM is responsible for most of the overrun and delete it.
-
----
-
-## 5. Cost-Saving Options (AZ-900 Add-on)
-
-AZ-900 practice scenarios regularly ask for the way to lower the cost of a given workload.
-
-| Option | What it is | Best suited for |
+| Aspect | Traditional (perimeter) model | Zero Trust model |
 |---|---|---|
-| **Azure Reservations (Reserved Instances)** | Commit to using a specific resource (such as a VM size) for **1 or 3 years** in exchange for a significant discount compared to pay-as-you-go | Steady, predictable, always-on workloads |
-| **Azure Savings Plan for compute** | Commit to a fixed hourly spend on compute for 1 or 3 years, applied flexibly across eligible compute services | Compute usage that is predictable in amount but changes in type or region |
-| **Azure Spot Virtual Machines** | Use Azure's unused capacity at a deep discount, with the risk that Azure can evict the VM when it needs the capacity back | Interruptible work such as batch processing or testing |
-| **Azure Hybrid Benefit** | Use existing on-premises Windows Server or SQL Server licenses that have Software Assurance (or qualifying subscriptions) on Azure to avoid paying for the license again | Organizations migrating licensed software from on-premises |
+| Trust assumption | Anything inside the corporate network is trusted | Nothing is trusted by default, wherever it is |
+| Main defense | A strong network boundary (firewall) | Identity and continuous verification on every request |
+| Access scope | Broad access once inside | Minimal, task-specific access |
+| Response to a breach | Attackers can move freely once inside | Damage is contained by segmentation and monitoring |
+| Fit for cloud and remote work | Poor, because users and data are outside the boundary | Good, because verification does not depend on location |
+
+### 2.2 The Three Guiding Principles
+
+| Principle | Meaning | How it is applied in Azure |
+|---|---|---|
+| **Verify explicitly** | Always authenticate and authorize using all available signals: identity, location, device health, application, and risk | Microsoft Entra ID, MFA, Conditional Access |
+| **Use least privilege access** | Give users only the access they need, for the time they need it | RBAC with the narrowest role and scope (Unit 3, Section 14) |
+| **Assume breach** | Design as if an attacker is already inside; limit the blast radius, segment, encrypt, and monitor | Subnet segmentation with NSGs, Azure Firewall, encryption, Defender for Cloud |
+
+### 2.3 Zero Trust Pillars (AZ-900 Add-on)
+
+Zero Trust is applied across six areas, sometimes called pillars:
+
+| Pillar | Example control |
+|---|---|
+| Identities | MFA and Conditional Access for every user |
+| Endpoints (devices) | Only compliant, managed devices may access resources |
+| Applications | Access to each application is verified and limited |
+| Data | Classify, label, and encrypt sensitive data |
+| Infrastructure | Harden and monitor VMs, containers, and services |
+| Network | Segment networks, filter traffic, avoid implicit trust between subnets |
 
 **Example:**
-A company runs a database VM continuously all year. Because the workload is predictable, it purchases a 3-year reservation for that VM size instead of paying pay-as-you-go rates. The same company already owns Windows Server licenses with Software Assurance, so it also applies Azure Hybrid Benefit to avoid paying for the Windows license a second time. For its nightly data-processing job, which can safely restart if interrupted, it uses Spot VMs.
+An employee in the office tries to open a sensitive application. Under a perimeter model, being on the office network is enough. Under Zero Trust, the system still verifies the identity with MFA, checks that the laptop is compliant, and grants only the role needed for that application, with no extra access to unrelated systems.
+
+**Exam Tip:** "Verify explicitly, least privilege, assume breach" are the three principles. A question describing "do not trust a request just because it comes from the internal network" is describing Zero Trust.
 
 ---
 
-## 6. Tags
+# PART C — IDENTITY PROTECTION
 
-A **tag** is a **name-value pair** that can be attached to Azure resources, resource groups, and subscriptions to organize them logically.
+## 3. Multifactor Authentication (MFA)
 
-**Common uses:**
-- Cost tracking: group spending by department, project, or environment in Cost Management (for example, `Department = Finance`, `Environment = Production`).
-- Operations: identify owners, applications, or automation scope.
-- Governance: used with Azure Policy to require or audit specific tags.
+**Multifactor Authentication (MFA)** requires a user to prove their identity using **two or more independent factors** before access is granted. Passwords alone are the weakest control because they can be guessed, phished, or reused (Unit 3, Section 13).
 
-**Key facts (frequently tested):**
-- A resource can have multiple tags, up to a defined limit per resource.
-- **Tags are NOT automatically inherited.** Applying a tag to a resource group does not automatically apply it to the resources inside the group. Inheritance can be achieved by using Azure Policy (a policy that copies or appends the tag from the resource group) or the tag-inheritance setting in Cost Management.
-- Tags do not change how a resource functions. They are metadata only.
+### 3.1 The Three Factor Categories
+
+| Category | Meaning | Examples |
+|---|---|---|
+| **Something you know** | A secret the user remembers | Password, PIN |
+| **Something you have** | A physical item the user possesses | Phone with an authenticator app, hardware security key |
+| **Something you are** | A biometric characteristic | Fingerprint, face recognition |
+
+**Important:** MFA means factors from **different categories**. Two passwords are not MFA, because both are "something you know."
+
+### 3.2 How MFA Works in Microsoft Entra ID
+
+1. The user enters their username and password (first factor).
+2. Entra ID asks for a second verification, such as approving a notification in the Microsoft Authenticator app.
+3. Access is granted only if both succeed.
+
+**Why it matters:** If an attacker steals or guesses the password, they still cannot sign in without the second factor. MFA blocks the large majority of account-compromise attacks that rely on stolen passwords.
+
+### 3.3 MFA Verification Methods
+
+| Method | Description |
+|---|---|
+| Microsoft Authenticator app | Push notification to approve (with number matching), or a one-time code |
+| FIDO2 security key | Physical USB/NFC key used to authenticate |
+| Windows Hello for Business | Biometric or device-bound PIN |
+| OATH hardware or software tokens | Generate time-based one-time codes |
+| SMS or voice call | A code or call to the registered phone; convenient but considered less secure than the app or a security key |
+
+**Number matching (AZ-900 Add-on):** To reduce "MFA fatigue" attacks, where an attacker repeatedly triggers approval prompts hoping the user taps "Approve" by mistake, the Authenticator app requires the user to type the number shown on the sign-in screen.
 
 **Example:**
-A company tags every resource with `CostCenter` and `Environment`. In Cost Management, an administrator groups the cost analysis by the `CostCenter` tag and sees exactly how much each department spent across several resource groups, even though the resources belong to different groups.
+An employee signs in with the correct password and is prompted to approve a sign-in on the registered phone. The login screen shows the number 47, and the employee must enter 47 in the Authenticator app. A remote attacker who only has the stolen password cannot complete the sign-in.
+
+### 3.4 Security Defaults (AZ-900 Add-on)
+
+**Security defaults** are a set of free, preconfigured identity security settings in Microsoft Entra ID, designed to protect organizations that have no dedicated security team.
+
+They:
+- Require all users to register for MFA.
+- Require administrators to use MFA.
+- Block legacy authentication protocols that cannot do MFA.
+- Require MFA for privileged activities, such as accessing the Azure management tools.
+
+**Key facts:**
+- They are on by default for new tenants and need no paid license.
+- They cannot be mixed with Conditional Access. An organization that wants finer control **turns security defaults off** and uses Conditional Access instead (Section 4).
+
+### 3.5 Self-Service Password Reset (SSPR) (AZ-900 Add-on)
+
+**Self-Service Password Reset** lets users reset or unlock their own password without calling the help desk, after proving their identity using registered methods such as the Authenticator app or a verification code. It reduces help-desk load while keeping the reset itself secured by verification.
+
+### 3.6 MFA vs Passwordless (Link to Unit 3)
+
+| Approach | Password used? | Security level |
+|---|---|---|
+| Password only | Yes | Weakest |
+| Password + MFA | Yes, plus a second factor | Strong |
+| Passwordless (Windows Hello, Authenticator passwordless, FIDO2 key) | No | Strongest and most convenient |
+
+**Exam Tip:** MFA is **authentication** (who are you). It does not decide what the user may do. That is the job of RBAC (authorization).
 
 ---
 
-# PART B — GOVERNANCE AND COMPLIANCE
+## 4. Conditional Access
 
-## 7. Azure Policy
+**Conditional Access** is a feature of Microsoft Entra ID that uses **if-then policies** at sign-in to decide whether to allow access, require additional verification, or block. It is the practical engine for the Zero Trust principle "verify explicitly."
+
+### 4.1 Structure of a Conditional Access Policy
+
+| Part | Meaning | Examples |
+|---|---|---|
+| **Signals (the "if")** | Information collected about the sign-in attempt | User or group, location (IP address), device state, application being accessed, sign-in risk |
+| **Decision (the "then")** | The result applied when the signals match | **Block** access, or **grant** access with requirements |
+| **Grant controls** | Requirements that must be met to allow access | Require MFA, require a compliant device, require a password change |
+| **Session controls** | Limits that apply during the session | Limit how long a session lasts, restrict what can be done in the app |
+
+### 4.2 Key Facts
+
+- Conditional Access policies are evaluated **after the first factor (usually the password) is completed**. It is not a first line of defense that replaces authentication.
+- It requires a paid Microsoft Entra ID plan (**Entra ID P1** or higher). Basic MFA through security defaults is free.
+- A new policy can first be run in **report-only mode**, which shows what would have happened without enforcing it. This avoids locking out users by mistake.
+- Policies can target specific users, groups, applications, and locations, so different groups can get different rules.
+
+### 4.3 Example Policies
+
+| Scenario | Policy |
+|---|---|
+| Remote access | If a user signs in from outside the corporate network, then require MFA |
+| Risky location | If a user signs in from a country where the company has no staff, then block access |
+| Admins | If a user signs in to the Azure management portal as an administrator, then always require MFA |
+| Unmanaged devices | If a user signs in from a personal device, then limit access to sensitive applications |
+
+**Example:**
+A company creates a policy: "If any user signs in from outside the corporate network, then require MFA." A sales employee working from a café is prompted for MFA, while the same employee in the office is not. A second policy blocks all sign-ins from a country where the company has no staff.
+
+### 4.4 Security Defaults vs Conditional Access (Exam Comparison)
+
+| Feature | Security Defaults | Conditional Access |
+|---|---|---|
+| Cost | Free | Requires Entra ID P1 or higher |
+| Customization | None, a fixed set of protections | Fully customizable if-then policies |
+| Typical user | Small organizations without a security team | Organizations needing granular control |
+| Can both be used together | No, security defaults must be off when Conditional Access is used | |
+
+### 4.5 MFA vs Conditional Access vs RBAC
+
+| Feature | Question it answers |
+|---|---|
+| MFA | "Is this person really who they claim to be?" |
+| Conditional Access | "Under what **conditions** (where, which device, how risky) should this sign-in be allowed, and what extra proof is needed?" |
+| RBAC | "Once signed in, **what can** this person do, and where?" |
+
+**Exam Tip:** MFA is one of the grant controls that Conditional Access can require. They work together, but Conditional Access is the policy engine and MFA is the verification step.
+
+---
+
+# PART D — GOVERNANCE
+
+## 5. Azure Policy
 
 **Azure Policy** is a governance service used to **create, assign, and manage rules that enforce standards on Azure resources and assess their compliance**. It checks the **properties of resources** against the organization's rules.
 
-**Key concepts:**
-- **Policy definition:** A single rule that states a condition and an effect. Examples: "Allowed locations," "Allowed VM sizes," "Require a tag on resources."
-- **Initiative (policy set):** A collection of related policy definitions grouped to achieve a single goal, for example a regulatory standard.
-- **Assignment:** Applying a definition or initiative to a **scope** (management group, subscription, resource group). Assignments are inherited down the resource hierarchy (Unit 2, Section 7).
-- **Effects (what the policy does):**
+### 5.1 Key Concepts
+
+| Concept | Meaning |
+|---|---|
+| **Policy definition** | A single rule written as a condition and an effect, for example "Allowed locations" or "Allowed virtual machine sizes" |
+| **Initiative (policy set)** | A group of related policy definitions assigned together to achieve one goal, such as a regulatory standard |
+| **Assignment** | Applying a definition or initiative to a **scope** (management group, subscription, resource group). It is inherited down the resource hierarchy (Unit 2, Section 7) |
+| **Parameters** | Values that make a definition reusable, such as the list of allowed regions |
+| **Exclusion** | A scope inside the assignment that is exempted |
+| **Compliance state** | Whether each resource is compliant or non-compliant with the assigned policies |
+
+Azure provides many **built-in** definitions, and custom definitions can be written (as JSON).
+
+### 5.2 Policy Effects
 
 | Effect | Behavior |
 |---|---|
-| Deny | Blocks creation or update of a resource that violates the rule |
-| Audit | Allows the resource but records it as non-compliant |
-| Append / Modify | Adds or changes properties (such as tags) on the resource |
-| DeployIfNotExists | Deploys a related resource if it is missing |
+| **Deny** | Blocks the creation or update of a resource that violates the rule |
+| **Audit** | Allows the resource but records it as non-compliant |
+| **AuditIfNotExists** | Audits when a related resource that should exist is missing |
+| **Append / Modify** | Adds or changes properties (such as tags) on the resource |
+| **DeployIfNotExists** | Automatically deploys a related resource if it is missing |
+| **Disabled** | The rule is turned off |
 
-- **Compliance:** Azure Policy evaluates both new and **existing** resources, and shows a compliance dashboard. Existing non-compliant resources are flagged and can be remediated; they are not automatically deleted.
+### 5.3 How Evaluation Works
+
+- When a resource is **created or updated**, ARM (Unit 2, Section 8) checks the request against the assigned policies before the resource is created. A Deny effect stops the request.
+- Existing resources are checked when a policy is assigned and during a regular compliance scan roughly once a day.
+- **Existing non-compliant resources are flagged, not deleted.** The administrator can fix them manually or run a **remediation task** for effects such as Modify and DeployIfNotExists.
+- Azure Policy applies **even to users with the Owner role**, because it controls resource properties, not user permissions.
+
+### 5.4 Common Built-in Policies
+
+| Policy | Purpose |
+|---|---|
+| Allowed locations | Restrict resources to approved regions (for example, India regions only) |
+| Allowed virtual machine size SKUs | Restrict which VM sizes can be created |
+| Require a tag and its value | Force every resource to carry a required tag |
+| Inherit a tag from the resource group | Copy a tag from the resource group to resources that lack it |
+| Not allowed resource types | Block certain services entirely |
 
 **Example:**
-A company assigns the built-in "Allowed locations" policy at the subscription level, permitting only India regions. A developer then attempts to create a VM in another region. ARM (Unit 2, Section 8) evaluates the request against the policy and rejects it with a "Deny" effect, even though the developer has the Contributor role on the resource group.
+A company assigns the built-in "Allowed locations" policy at the subscription level, permitting only India regions. A developer with the Contributor role then attempts to create a VM in a region outside India. ARM evaluates the request, the policy returns a Deny effect, and the deployment fails with a policy-violation error, even though RBAC would have allowed the developer to create VMs.
+
+### 5.5 Practical Link (Experiment 9: Create and apply Azure Policy to restrict resource deployment)
+
+1. In the Azure Portal open **Policy**, then **Definitions**, and search for "Allowed locations."
+2. Select **Assign**, choose the scope (a subscription or a test resource group), and select the permitted regions as parameters.
+3. Create the assignment and wait a few minutes for it to take effect.
+4. Try to create a resource (for example, a storage account) in a region not on the list.
+5. Observe the deployment being blocked with a policy-violation message, then open **Policy > Compliance** to see the assignment's state.
+6. Remove the assignment afterwards to avoid blocking later labs.
 
 ---
 
-## 8. Resource Locks
+## 6. Resource Locks
 
 A **resource lock** prevents accidental **deletion or modification** of Azure resources, regardless of the user's permissions.
 
-**Two lock types:**
+### 6.1 Lock Types
 
 | Lock Type | Effect |
 |---|---|
-| **CanNotDelete** (Delete) | Authorized users can read and modify the resource, but cannot delete it |
+| **CanNotDelete** (shown as "Delete" in the Portal) | Authorized users can read and modify the resource, but cannot delete it |
 | **ReadOnly** | Authorized users can only read the resource; they cannot modify or delete it |
 
-**Key facts:**
-- A lock applies to **all users and roles**, including users with the Owner role. To delete or change a locked resource, the lock must first be removed (by a user who has permission to manage locks).
-- Locks can be applied at the subscription, resource group, or resource level, and are **inherited** by everything beneath that scope.
-- Locks protect against accidental changes made through the management plane (for example, from the Portal or CLI). They are not a replacement for backup or for access control.
+### 6.2 Key Facts
+
+- A lock applies to **all users and roles**, including Owners. To change or delete a locked resource, the lock must first be removed.
+- Locks can be set at the subscription, resource group, or resource level, and are **inherited** by all child resources. The most restrictive lock applies.
+- Only users with the **Owner** or **User Access Administrator** role (or equivalent permissions) can create or delete locks.
+- Locks apply to **management-plane operations** (actions through ARM, such as delete or update of the resource). They do **not** stop actions inside the resource. For example, a lock on a storage account does not prevent deleting blobs, and a lock on a SQL Database does not prevent changing rows inside it.
+- A ReadOnly lock can block actions that seem harmless. For example, starting or restarting a VM can be blocked by a ReadOnly lock, because those operations are write operations at the management level.
+
+### 6.3 Locks and Resource Group Deletion
+
+In Unit 2, Section 4, it was noted that deleting a resource group deletes every resource inside it. A **CanNotDelete lock on the resource group** is the standard protection against that accident.
 
 **Example:**
-The "WebApp-Prod" resource group (Unit 2, Section 4) holds a production VM, storage account, and virtual network. An administrator applies a CanNotDelete lock to the resource group. Later, someone tries to delete the resource group, and Azure refuses the request until the lock is removed. This protects against the accidental cascade deletion described in Unit 2.
+The "WebApp-Prod" resource group holds a production VM, a storage account, and a virtual network. An administrator applies a CanNotDelete lock to the resource group. Later, a team member with the Contributor role tries to delete the group, and Azure refuses the request until the lock is removed by someone who has permission to manage locks.
 
 ---
 
-## 9. Azure Policy vs RBAC vs Resource Locks (Exam Comparison)
+## 7. Tagging
 
-These three features are often confused because all of them restrict what can happen in Azure.
+A **tag** is a **name-value pair** attached to a resource, resource group, or subscription to organize and describe it. Tags are metadata. They do not change how the resource works.
+
+### 7.1 Common Uses
+
+| Use | Example tags |
+|---|---|
+| Organization and ownership | `Owner = Rahul`, `Department = Finance` |
+| Environment identification | `Environment = Production` / `Development` |
+| Application grouping | `Application = StudentPortal` |
+| Cost tracking (covered in Unit 5) | `CostCenter = CC-104` |
+| Automation and governance | Policies and scripts that act on resources with a given tag |
+
+### 7.2 Key Facts (Frequently Tested)
+
+- Each resource, resource group, or subscription can have up to **50** tag name-value pairs.
+- Tag **names are not case-sensitive** and tag **values are case-sensitive**.
+- **Tags are NOT automatically inherited.** A tag on a resource group does not automatically appear on the resources inside it.
+- To apply tags consistently:
+  - Use Azure Policy: **"Require a tag and its value"** (Deny effect) forces a tag at creation, and **"Inherit a tag from the resource group"** (Modify effect) copies it.
+  - Apply tags in templates or scripts at deployment time.
+- Some resource types do not support tags.
+- Tags help **find** resources across resource groups, for example all resources with `Environment = Production` in every group.
+
+**Example:**
+A company has VMs, databases, and storage accounts spread over eight resource groups. It tags every resource with `Environment` and `Owner`. An administrator can now search for every resource tagged `Environment = Development`, even though they sit in different groups, and review them for deletion. A policy requiring the `Owner` tag makes any new resource without it fail to deploy.
+
+---
+
+## 8. Azure Policy vs RBAC vs Resource Locks vs Tags (AZ-900 Add-on)
+
+These governance features are often confused because several of them limit what can happen in Azure.
 
 | Feature | Question it answers | Focus | Example |
 |---|---|---|---|
-| **RBAC** (Unit 3) | "What can this **user** do?" | User actions (authorization) | A junior developer has the Reader role and cannot create VMs |
-| **Azure Policy** | "What state are **resources** allowed to be in?" | Resource properties and compliance | VMs can only be created in approved regions, even for an Owner |
-| **Resource Lock** | "Can this resource be **deleted or changed** at all?" | Protection from accidental deletion or change | A production resource group cannot be deleted until the lock is removed |
+| **RBAC** (Unit 3) | "What can this **user** do?" | User actions (authorization) | A Reader cannot create VMs |
+| **Azure Policy** | "What **state** may resources be in?" | Resource properties and compliance | VMs may only be created in India regions, even by an Owner |
+| **Resource Lock** | "Can this resource be **deleted or changed** at all?" | Protection from accidental change | A production resource group cannot be deleted until the lock is removed |
+| **Tag** | "How is this resource **labeled**?" | Organization and reporting (no enforcement by itself) | `Environment = Production` |
 
-**Scenario that combines all three:**
-A user with the Contributor role (RBAC allows creating resources) tries to deploy a VM in a disallowed region. RBAC permits the action, but Azure Policy denies it. In another case, the same user tries to delete the production resource group. RBAC permits it, but a CanNotDelete lock blocks it.
+**Scenario combining all four:**
+A user with the Contributor role (RBAC allows creating resources) tries to deploy a VM in a disallowed region. RBAC permits the action, but Azure Policy denies it. The same user then tries to delete the production resource group. RBAC permits that too, but a CanNotDelete lock blocks it. A "Require tag" policy also ensures every new resource carries an `Owner` tag, so the administrator can later find who created each resource.
+
+**Exam Tip:** If the question is about **who** may perform an action, think RBAC. If it is about **what resources are allowed to look like**, think Policy. If it is about **preventing accidental deletion**, think locks.
 
 ---
 
-## 10. Cloud Adoption Framework (AZ-900 Add-on)
+## 9. Cloud Adoption Framework (AZ-900 Add-on)
 
-The **Microsoft Cloud Adoption Framework for Azure** is a collection of documentation, guidance, best practices, and tools that helps an organization plan and carry out its move to the cloud.
-
-**Phases (in order):**
+The **Microsoft Cloud Adoption Framework for Azure** is a collection of guidance, best practices, and tools that helps an organization plan and carry out its move to the cloud, with governance as one of its parts.
 
 | Phase | Purpose |
 |---|---|
@@ -199,344 +398,138 @@ The **Microsoft Cloud Adoption Framework for Azure** is a collection of document
 | Plan | Create an adoption plan aligned to those goals, including skills and workload inventory |
 | Ready | Prepare the environment, including the landing zone where workloads will run |
 | Adopt | Migrate existing workloads and build or modernize new ones |
-| Govern | Set up governance (policies, cost control, compliance) |
-| Manage | Operate the cloud environment (monitoring, operations, resilience) |
+| Govern | Set up governance: policies, cost control, compliance |
+| Manage | Operate the environment: monitoring, operations, resilience |
 
-**Note on Azure Blueprints:** Older AZ-900 question banks refer to Azure Blueprints as a way to package ARM templates, policy assignments, and role assignments into a repeatable environment definition. Microsoft has announced the retirement of Azure Blueprints, and the current exam objectives focus on Azure Policy, locks, and tags instead. Know the term for older material, but do not teach it as the recommended approach.
+**Note on Azure Blueprints:** Older AZ-900 question banks describe Azure Blueprints as a way to package ARM templates, policy assignments, and role assignments into a repeatable environment definition. Microsoft has announced the retirement of Azure Blueprints, and the current exam focuses on Azure Policy, locks, and tags. Know the term for older material, but do not teach it as the recommended approach.
 
 ---
 
-## 11. Microsoft Purview and Compliance Resources (AZ-900 Add-on)
+# PART E — COMPLIANCE
 
-### 11.1 Microsoft Purview
-**Microsoft Purview** is a family of data governance, risk, and compliance solutions that helps an organization **understand, govern, and protect its data across on-premises, multicloud, and SaaS environments**.
+## 10. Compliance Offerings
 
-Main ideas for AZ-900:
-- **Data governance:** Discover and catalog data sources and see where data lives and how it flows.
-- **Compliance solutions:** Help an organization meet regulatory requirements. This includes **Compliance Manager**, which provides assessments and a compliance score against regulatory standards.
+**Compliance** means meeting the legal, regulatory, and industry standards that apply to an organization, such as rules about data privacy and financial security. Microsoft provides evidence that Azure meets many such standards, and gives customers tools to prove their own compliance.
 
-**Example:**
-A hospital stores patient data across Azure SQL Database, Blob Storage, and an on-premises file server. It uses Microsoft Purview to discover and catalog where sensitive data is stored, so it can apply the right protection and prove to auditors that it knows where regulated data lives.
+### 10.1 Compliance Offerings in Azure
 
-### 11.2 Trust and Privacy Resources
+Azure holds a large portfolio of certifications and attestations, covering global, industry, regional, and government standards. Examples include:
+
+| Type | Examples |
+|---|---|
+| Global security standards | ISO/IEC 27001 and related ISO standards, SOC 1, SOC 2, SOC 3 |
+| Payment industry | PCI DSS |
+| Healthcare | HIPAA |
+| Privacy law support | GDPR (European Union) |
+| Government | FedRAMP (United States) |
+
+The full, current list is published in **Azure compliance documentation**, searchable by standard, industry, and region.
+
+### 10.2 Compliance Resources from Microsoft
 
 | Resource | What it provides |
 |---|---|
-| **Microsoft Trust Center** | Information about how Microsoft approaches security, privacy, and compliance |
-| **Service Trust Portal** | Audit reports, certifications, and compliance documentation (such as ISO and SOC reports) that customers can download for their own auditors |
+| **Microsoft Trust Center** | Information about how Microsoft approaches security, privacy, compliance, and transparency |
+| **Service Trust Portal (STP)** (AZ-900 Add-on) | Audit reports, certifications, and compliance documents (for example, ISO and SOC reports) that customers can download for their own auditors |
+| **Compliance Manager** (AZ-900 Add-on) | A tool that provides assessments against regulatory standards, a compliance score, and recommended actions to improve it. It is part of Microsoft Purview |
 | **Microsoft Privacy Statement** | Explains what personal data Microsoft processes, how, and why |
-| **Compliance offerings documentation** | Lists the regulations and standards Azure supports, by industry and region |
+| **Online Services Terms and Data Protection Addendum** | Contractual commitments on how Microsoft handles customer data |
+| **Azure Policy regulatory compliance** | Built-in initiatives mapped to standards, showing which resources comply (Section 5) |
+
+### 10.3 Special Compliance Regions
+
+Some standards require data and operations to stay inside a specific country or government environment. Azure offers **sovereign or isolated regions**, such as Azure Government and a China region operated by a local partner (Unit 2, Section 2.2), with restricted access and their own compliance coverage.
+
+### 10.4 Compliance Is Also a Shared Responsibility
+
+**Microsoft's certification does not make the customer compliant automatically.** Azure being certified for a standard means the platform meets the standard. The customer must still configure their own resources, access, and data handling correctly.
 
 **Example:**
-A bank's auditor asks for evidence that Azure meets a specific security standard. The bank's compliance officer downloads the relevant audit report from the Service Trust Portal and attaches it to the audit file.
+A hospital must show that its patient data platform meets HIPAA requirements. The compliance officer downloads Microsoft's audit reports from the Service Trust Portal to prove that the Azure platform is audited. The hospital then uses Compliance Manager to assess its own configuration, and Azure Policy to enforce that data is stored only in approved regions.
+
+**Exam Tip:** If a question asks where to find Microsoft's **audit reports and certifications** for an auditor, the answer is the **Service Trust Portal**. If it asks for a **compliance score and assessments** for the organization's own environment, the answer is **Compliance Manager**.
 
 ---
 
-# PART C — AZURE MANAGEMENT TOOLS
+## 11. Microsoft Purview Overview
 
-## 12. Azure Portal, Cloud Shell, Azure CLI, and Azure PowerShell
+**Microsoft Purview** is a family of data governance, data security, and risk and compliance solutions. It helps an organization **understand, govern, and protect its data wherever it lives**: on-premises, in multiple clouds, and in SaaS applications.
 
-Azure resources can be managed through several interfaces. All of them call the same **Azure Resource Manager API** (Unit 2, Section 8), so the result and policy enforcement are the same.
+### 11.1 Why It Is Needed
 
-| Tool | What it is | Typical use |
+Organizations store data across databases, file shares, Blob Storage, and SaaS applications. Without a clear view, they cannot answer: What data do we have? Where is it? How sensitive is it? Who can access it? Does it meet regulatory requirements?
+
+### 11.2 Main Solution Areas
+
+| Area | Purpose | Examples |
 |---|---|---|
-| **Azure Portal** | Web-based graphical interface | Exploring, learning, creating and managing resources visually |
-| **Azure Cloud Shell** | Browser-based, authenticated shell inside the Portal (or a browser tab) offering **Bash** or **PowerShell**, with common tools pre-installed | Running commands without installing anything locally |
-| **Azure CLI** | Cross-platform command-line tool using `az` commands, available on Windows, macOS, and Linux | Scripting and automation, especially for users who prefer Bash-style commands |
-| **Azure PowerShell** | PowerShell module with Azure cmdlets (for example, `New-AzVM`), also cross-platform | Scripting and automation for users who prefer PowerShell |
+| **Data governance** | Discover, catalog, and understand data across the organization | **Data Map** (scans and classifies data sources), **Unified Catalog** (searchable inventory of data assets), **data lineage** (where data came from and how it moved) |
+| **Data security** | Protect sensitive data | **Sensitivity labels** (classify and protect documents and data), **Data Loss Prevention (DLP)** (prevent sensitive data being shared inappropriately), Insider Risk Management |
+| **Risk and compliance** | Meet regulatory and legal requirements | **Compliance Manager**, **eDiscovery** (find data for legal cases), **Audit** (record user and admin activity), data lifecycle management (retention and deletion rules) |
 
-**Key facts:**
-- Cloud Shell needs a storage account (an Azure Files share) to keep files between sessions, which ties back to Azure Files in Unit 3, Section 7.
-- Azure CLI and Azure PowerShell are installed on a local machine, while Cloud Shell needs no local installation.
-- Command-line tools are preferred over the Portal when tasks must be repeated, automated, or run at scale.
+### 11.3 Key Points for AZ-900
 
-**Example:**
-An administrator needs to create 20 identical resource groups, each tagged with its project name. Clicking through the Portal 20 times would be slow and error-prone. Instead the administrator writes a short script using Azure CLI in Cloud Shell, and the 20 groups are created in one run.
-
----
-
-## 13. Azure Arc (AZ-900 Add-on)
-
-**Azure Arc** extends Azure management and governance to resources that are **outside Azure**, such as servers in an on-premises datacenter, servers in other cloud providers, and Kubernetes clusters.
-
-**How it works:**
-- Arc projects the external resources into Azure Resource Manager, so they appear in the Portal as Azure resources.
-- Once projected, familiar Azure tools can be applied to them: tags, Azure Policy, RBAC, and monitoring.
-
-**Connection to Unit 1:** Azure Arc is a practical tool for **hybrid cloud** (Unit 1, Section 6.3), because it gives one management experience across the on-premises and cloud parts of the environment.
+- Purview provides a **unified** view across on-premises, multicloud, and SaaS data, not just Azure.
+- It helps with **governance** (knowing the data) and **compliance** (proving requirements are met).
+- Purview works with the other Unit 4 tools. Policy and Defender for Cloud protect and assess resources, while Purview focuses on the **data itself**.
 
 **Example:**
-A company keeps 30 Windows servers in its own datacenter while running other workloads in Azure. By connecting the on-premises servers through Azure Arc, the company can assign the same Azure Policy, tags, and RBAC to all servers, and see them in the same Azure Portal view as its Azure VMs.
+A university stores student records in Azure SQL Database, documents in Blob Storage, and exam files on an on-premises server. It uses Microsoft Purview to scan these sources, discover where personal student data is stored, and classify it as sensitive. Sensitivity labels then protect the documents, and Compliance Manager helps the university show an auditor that it handles student data according to privacy rules.
 
----
-
-## 14. Infrastructure as Code: ARM Templates and Bicep
-
-**Infrastructure as Code (IaC)** means defining infrastructure in files that are deployed by tools, rather than created by hand. The same files can be stored in version control and reused.
-
-**Benefits:**
-- **Consistency:** Every deployment produces the same result.
-- **Repeatability:** The same file can create development, test, and production environments.
-- **Speed and agility:** Environments are created in minutes (Unit 1, Section 14).
-- **Documentation and version history:** The file is the record of what was deployed.
-
-| Option | Description |
-|---|---|
-| **ARM templates** | JSON files describing the desired end-state of Azure resources (introduced in Unit 2, Section 8). Declarative: the template states what should exist, and ARM works out how to create it |
-| **Bicep** | A simpler, more readable declarative language for Azure that is **compiled into an ARM template** before deployment |
-
-**Example:**
-A team stores a Bicep file describing a resource group's VM, virtual network, and storage account. Deploying the file to a test subscription and then a production subscription gives two identical environments. When the team changes the file and redeploys, Azure updates the existing resources to match, instead of creating duplicates.
-
----
-
-# PART D — MONITORING
-
-## 15. Azure Advisor
-
-**Azure Advisor** is a free, personalized recommendation service that **analyzes the existing Azure resources and configuration and suggests ways to improve them**.
-
-**Recommendations are grouped into five categories:**
-
-| Category | Typical recommendation |
-|---|---|
-| **Reliability** | Use Availability Zones or an Availability Set for a single critical VM |
-| **Security** | Fix a security issue flagged by Microsoft Defender for Cloud |
-| **Performance** | Upgrade an overloaded resource to a larger size |
-| **Cost** | Resize or shut down underused VMs |
-| **Operational Excellence** | Improve process, deployment, and management practices |
-
-**Example:**
-Advisor reports that a production VM has had very low CPU usage for weeks and recommends resizing it to a smaller size, which would lower the monthly cost. In the same view it recommends placing another critical single-instance VM in an Availability Zone for better reliability.
-
----
-
-## 16. Azure Service Health
-
-**Azure Service Health** keeps users informed about the health of the Azure services, regions, and resources they depend on. It has three parts:
-
-| Component | Scope | Purpose |
-|---|---|---|
-| **Azure Status** | Global, public | Shows the overall health of Azure services and regions worldwide |
-| **Service Health** | Personalized to the user's subscriptions, regions, and services | Tracks service issues, planned maintenance, health advisories, and security advisories that affect the user's own environment |
-| **Resource Health** | Individual resources | Shows whether a specific resource (such as one VM) is available, unavailable, or degraded, and why |
-
-**Key point:** Service Health tells about problems in the Azure platform. It does not diagnose problems that originate inside the customer's own application.
-
-**Example:**
-An application running in an Azure region becomes slow. The operations team first checks Resource Health for their VM and sees that it is available. They then check Service Health and find an ongoing service issue in that region. Instead of spending hours debugging their application, they know the cause is a platform issue and notify users.
-
----
-
-## 17. Azure Monitor
-
-**Azure Monitor** is a platform that **collects, analyzes, and acts on telemetry** from Azure resources, applications, and on-premises environments.
-
-**Key components:**
-
-| Component | Purpose |
-|---|---|
-| **Metrics** | Numerical measurements collected at regular intervals, such as CPU percentage or request count; suited to near-real-time monitoring |
-| **Logs (Log Analytics)** | Detailed event and diagnostic data stored in a Log Analytics workspace and queried with a query language called KQL |
-| **Alerts** | Notify people or trigger automated action when a condition is met, using **action groups** to define who is notified and what happens |
-| **Application Insights** | Application performance monitoring for web applications, such as response times, failures, and dependencies |
-| **Dashboards and workbooks** | Visualize metrics and logs together |
-
-**Connection to earlier units:** Azure Autoscale (Unit 1, Section 11; VM Scale Sets in Unit 2) makes its scaling decisions from Azure Monitor metrics such as average CPU usage.
-
-**Azure Monitor vs Service Health vs Advisor (exam comparison):**
-
-| Tool | Focus |
-|---|---|
-| Azure Monitor | Performance and behavior of the **customer's** resources and applications |
-| Azure Service Health | Health of the **Azure platform** and services themselves |
-| Azure Advisor | **Recommendations** to improve reliability, security, performance, cost, and operations |
-
-**Example:**
-A company's App Service web app shows occasional slow responses. The team uses Azure Monitor metrics to see response time rising whenever CPU use passes 80 percent. They create an alert that sends an email through an action group at 80 percent CPU, and use Application Insights to find the slow requests. Later they enable autoscale using the same CPU metric.
-
----
-
-# PART E — SECURITY FUNDAMENTALS
-
-## 18. Defense in Depth (AZ-900 Add-on)
-
-**Defense in depth** is a layered security strategy. Instead of relying on one protection, several layers are used so that if one layer is breached, the next layer still protects the data.
-
-**The seven layers (outermost to innermost):**
-
-| Layer | Protects against | Azure examples covered in this course |
-|---|---|---|
-| 1. Physical security | Physical access to datacenters | Microsoft-managed datacenters (always the provider's responsibility, Unit 1, Section 5) |
-| 2. Identity and access | Unauthorized sign-in and excess permissions | Microsoft Entra ID, MFA, RBAC (Unit 3) |
-| 3. Perimeter | Large-scale network attacks from outside | Edge protections such as DDoS protection |
-| 4. Network | Unauthorized network communication | NSGs, Azure Firewall, VNet segmentation (Unit 3) |
-| 5. Compute | Vulnerable or exposed servers | Securing VMs, patching, limiting open ports |
-| 6. Application | Insecure application code | Secure development, web application firewall (Application Gateway WAF, Unit 3) |
-| 7. Data | Exposure or theft of stored data | Encryption, storage redundancy and access control |
-
-**Example:**
-An attacker steals an employee's password. Because the company uses defense in depth, MFA (identity layer) stops the sign-in. If the attacker had bypassed that, the NSG (network layer) allows access to the database subnet only from the web subnet, and encryption (data layer) protects the stored records.
-
----
-
-## 19. Zero Trust (AZ-900 Add-on)
-
-**Zero Trust** is a security model that assumes **no user, device, or network location is trusted by default**, even inside the corporate network. Every access request is checked.
-
-**Three guiding principles:**
-
-| Principle | Meaning |
-|---|---|
-| **Verify explicitly** | Always authenticate and authorize using all available signals (identity, location, device health, risk) |
-| **Use least privilege access** | Give only the minimum access needed (RBAC in Unit 3), and only for the time needed |
-| **Assume breach** | Design as if an attacker is already inside: limit the blast radius, segment networks, and monitor continuously |
-
-**Example:**
-An employee in the office tries to open a sensitive application. Under a traditional model, being on the office network is enough. Under Zero Trust, the system still verifies the user's identity with MFA, checks that the laptop is compliant, and grants only the role needed for that application.
-
----
-
-## 20. Conditional Access (AZ-900 Add-on)
-
-**Conditional Access** is a feature of Microsoft Entra ID that uses **if-then policies** to decide, at sign-in time, whether to grant access, require extra verification, or block. It is the practical engine behind Zero Trust's "verify explicitly."
-
-**How a policy works:**
-- **Signals (the "if"):** user or group, location, device state, application being accessed, and sign-in risk.
-- **Decisions (the "then"):** block access, grant access, or grant access only if a requirement is met, such as completing MFA or using a compliant device.
-
-**Key facts:**
-- Conditional Access is applied **after** the first factor (such as a password) is completed.
-- It requires a paid Microsoft Entra ID plan (Entra ID P1 or higher).
-
-**Example:**
-A company creates a policy: "If a user signs in from outside the corporate network, then require MFA. If a user signs in from a high-risk location, then block." A sales employee working from a café is prompted for MFA, while the same employee in the office is not.
-
----
-
-## 21. Microsoft Defender for Cloud (AZ-900 Add-on)
-
-**Microsoft Defender for Cloud** is a cloud-native security service that provides **security posture management** and **threat protection** for workloads in Azure, on-premises, and other clouds.
-
-**Main capabilities:**
-
-| Capability | Meaning |
-|---|---|
-| **Security posture management** | Continuously assesses resources against security best practices, produces prioritized **recommendations**, and calculates a **Secure Score** that shows how well the environment is secured |
-| **Workload threat protection** | Detects and alerts on threats against resources such as VMs, storage accounts, databases, and containers |
-| **Multi-environment coverage** | Works across Azure, on-premises (through Azure Arc), and other cloud providers |
-
-**Example:**
-Defender for Cloud scans a subscription and reports that a VM has a management port open to the internet and that a storage account allows public access. It shows a low Secure Score and a prioritized list of fixes. After the team applies the recommendations, the Secure Score rises.
-
----
-
-# PART F — SERVICE LEVEL AGREEMENTS AND SERVICE LIFECYCLE
-
-## 22. Service Level Agreements (SLAs)
-
-A **Service Level Agreement (SLA)** is Microsoft's commitment for the **uptime and connectivity** of an Azure service, expressed as a percentage (introduced under High Availability, Unit 1, Section 9).
-
-**Key facts:**
-- Each Azure service has its own SLA, and the percentage depends on the configuration. A single-instance VM with standard disks has a lower SLA than VMs deployed across Availability Zones.
-- If Microsoft fails to meet the SLA, the customer can claim **service credits**. This is a bill credit, not compensation for business loss.
-- Higher availability configurations cost more.
-
-**Approximate downtime allowed per year:**
-
-| SLA | Allowed downtime per year |
-|---|---|
-| 99% | About 3.65 days |
-| 99.9% | About 8.76 hours |
-| 99.95% | About 4.38 hours |
-| 99.99% | About 52.6 minutes |
-| 99.999% | About 5.26 minutes |
-
-### 22.1 Composite SLAs
-
-When an application depends on several services **in series** (all must work), the **composite SLA** is the **product** of the individual SLAs, so it is **lower** than any single one.
-
-**Example:**
-A web app (99.95 percent SLA) depends on a database (99.99 percent SLA).
-Composite SLA = 0.9995 × 0.9999 = 0.99940005, which is approximately **99.94 percent**.
-
-When the same service is deployed **redundantly** (either copy can serve the request), the combined availability is **higher**:
-Combined = 1 − (1 − 0.999) × (1 − 0.999) = 0.999999, which is **99.9999 percent**.
-
-**Exam Tip:** More dependent services in series lower the composite SLA. Adding redundant copies, for example across Availability Zones (Unit 2, Section 3), raises it.
-
----
-
-## 23. Service Lifecycle: Preview and General Availability
-
-New Azure features and services pass through lifecycle stages:
-
-| Stage | Description | SLA |
-|---|---|---|
-| **Private preview** | Limited to selected customers by invitation | Not covered |
-| **Public preview** | Available to all customers to try, for testing and feedback; features can change | Generally **not** covered by an SLA and not recommended for production |
-| **General Availability (GA)** | Released for production use | Covered by the service's SLA |
-
-**Example:**
-A team wants to use a new Azure feature that is in public preview. The feature works in testing, but because preview services typically do not carry an SLA, the team waits until the feature reaches General Availability before using it in production. They follow Azure Updates to track when this happens.
+**Exam Tip:** A scenario describing "discover, classify, and govern data across on-premises and multiple clouds" points to Microsoft Purview. Do not confuse it with Defender for Cloud, which assesses and protects **resources and workloads**, not data inventory.
 
 ---
 
 ## Unit 4 Summary (Quick Revision)
 
-**Cost Management**
-- **Cost factors:** resource type, consumption, maintenance (idle resources), region, outbound bandwidth, subscription type, Marketplace.
-- **Pricing Calculator:** estimates the cost of **new Azure workloads**. **TCO Calculator:** compares **on-premises vs Azure** cost to show savings. **Cost Management:** analyzes **actual spending**, sets budgets and alerts; budgets do not stop spending by default.
-- **Cost-saving options:** Reservations (1 or 3 years), Savings Plan, Spot VMs (can be evicted), Azure Hybrid Benefit (reuse existing licenses).
-- **Tags:** name-value metadata for organization and cost tracking; **not inherited** by default.
-
-**Governance and Compliance**
-- **Azure Policy:** enforces rules on **resource properties** (allowed locations, allowed sizes, required tags); effects include Deny, Audit, Modify, DeployIfNotExists; evaluates existing resources as well.
-- **Resource Locks:** CanNotDelete and ReadOnly; apply to all users including Owners; inherited down the hierarchy.
-- **RBAC vs Policy vs Locks:** RBAC controls what **users** can do; Policy controls what **resources** may look like; Locks prevent **deletion or change**.
-- **Cloud Adoption Framework:** Strategy, Plan, Ready, Adopt, Govern, Manage. Azure Blueprints is being retired.
-- **Microsoft Purview** for data governance and compliance; **Service Trust Portal** for audit reports; Trust Center and Privacy Statement for security and privacy information.
-
-**Management Tools**
-- Portal (graphical), Cloud Shell (browser-based Bash or PowerShell), Azure CLI (`az`), Azure PowerShell (cmdlets); all go through ARM.
-- **Azure Arc** projects on-premises and other-cloud servers and Kubernetes into Azure for unified management.
-- **IaC:** ARM templates (JSON, declarative) and **Bicep** (simpler language that compiles to ARM templates).
-
-**Monitoring**
-- **Azure Advisor:** recommendations in five categories (Reliability, Security, Performance, Cost, Operational Excellence).
-- **Azure Service Health:** Azure Status (global), Service Health (your subscriptions), Resource Health (single resource).
-- **Azure Monitor:** metrics, logs (Log Analytics), alerts with action groups, Application Insights; feeds Autoscale.
-
-**Security**
-- **Defense in depth:** Physical, Identity and access, Perimeter, Network, Compute, Application, Data.
-- **Zero Trust:** verify explicitly, use least privilege access, assume breach.
-- **Conditional Access:** if-then sign-in policies in Entra ID (signals and decisions), requires Entra ID P1 or higher.
+**Security Concepts**
+- Security is shared: data, identity, and endpoints are always the customer's responsibility; the physical infrastructure is always Microsoft's.
+- **Defense in depth** has seven layers: Physical, Identity and access, Perimeter, Network, Compute, Application, Data.
 - **Microsoft Defender for Cloud:** security posture management, Secure Score, recommendations, and threat protection across Azure, on-premises, and other clouds.
 
-**SLAs and Lifecycle**
-- SLA is an uptime percentage with service credits as the remedy; composite SLA for dependent services is the **product** (lower); redundancy raises availability.
-- Lifecycle: Private preview, Public preview (usually no SLA), General Availability (SLA applies).
+**Zero Trust**
+- "Never trust, always verify." Three principles: **verify explicitly**, **use least privilege access**, **assume breach**.
+- Replaces the perimeter assumption that everything inside the network is trusted.
+
+**MFA and Conditional Access**
+- MFA needs factors from **different** categories: know, have, are. It blocks most attacks that use stolen passwords.
+- **Security defaults:** free, fixed protections (MFA for all, MFA for admins, block legacy authentication). **Self-Service Password Reset** lets users reset their own passwords.
+- **Conditional Access:** if-then sign-in policies (signals, then block or grant with requirements). Applied after the first factor, requires Entra ID P1 or higher, and can run in report-only mode. It cannot be used together with security defaults.
+
+**Governance**
+- **Azure Policy:** enforces rules on **resource properties**; effects include Deny, Audit, Modify, DeployIfNotExists; evaluates existing resources and flags, not deletes, non-compliant ones; applies even to Owners.
+- **Resource Locks:** CanNotDelete and ReadOnly; apply to all users including Owners; inherited; only affect management-plane operations.
+- **Tagging:** name-value metadata, up to 50 per resource; **not inherited** by default (use Policy to enforce or inherit).
+- **RBAC** controls what users can do; **Policy** controls what resources may look like; **Locks** prevent accidental deletion or change; **Tags** organize.
+- **Cloud Adoption Framework:** Strategy, Plan, Ready, Adopt, Govern, Manage.
+
+**Compliance**
+- Azure holds many certifications (ISO 27001, SOC, PCI DSS, HIPAA, FedRAMP, and more); details live in Azure compliance documentation.
+- **Service Trust Portal:** audit reports for auditors. **Compliance Manager:** compliance score and assessments. **Trust Center** and **Privacy Statement:** security and privacy information.
+- Microsoft's certification does not make the customer automatically compliant.
+- **Microsoft Purview:** unified data governance, data security, and compliance across on-premises, multicloud, and SaaS data.
 
 ---
 
 ## Practice Questions (Self-Check)
 
-1. List four factors that affect the cost of an Azure resource and give an example of each.
-2. What is the difference between the Pricing Calculator and the TCO Calculator? Which would a company use first when deciding whether to migrate from on-premises, and which afterward?
-3. A department's budget in Cost Management reaches 100 percent. Are its resources stopped automatically? Explain.
-4. Explain Azure Reservations, Spot VMs, and Azure Hybrid Benefit, and give a workload suited to each.
-5. A tag is applied to a resource group. Will the VMs inside it automatically have the tag? How could the tag be applied to them automatically?
-6. Explain the difference between Azure RBAC, Azure Policy, and resource locks using a scenario in which a user with the Contributor role tries to delete a production resource group.
-7. What does the Deny effect do in an Azure Policy? What happens to resources that already violate a newly assigned policy?
-8. Distinguish the CanNotDelete lock from the ReadOnly lock. Does a lock stop a user with the Owner role?
-9. Explain what Azure Arc does and how it relates to the hybrid cloud deployment model.
-10. What is the relationship between ARM templates and Bicep?
-11. Name the five categories of Azure Advisor recommendations, and say which Azure tool shows the health of a single VM.
-12. Distinguish Azure Monitor, Azure Service Health, and Azure Advisor using a scenario of a slow application.
-13. List the seven layers of defense in depth and match one tool from earlier units to three of the layers.
-14. State the three principles of Zero Trust. How does Conditional Access support the "verify explicitly" principle?
-15. What is the Secure Score in Microsoft Defender for Cloud?
-16. A web app with a 99.95 percent SLA depends on a database with a 99.99 percent SLA. Calculate the composite SLA. Why is it lower than either individual SLA?
-17. Why should a production workload not depend on a service that is in public preview?
+1. In the Shared Responsibility Model, which three areas are always the customer's responsibility regardless of service model?
+2. Name the seven layers of defense in depth and give one Azure feature from Units 1–3 for three of them.
+3. What does the Secure Score in Microsoft Defender for Cloud represent, and what does the service do besides scoring?
+4. State the three principles of Zero Trust. Explain how a traditional perimeter model differs from Zero Trust.
+5. Why are a password and a PIN together not considered multifactor authentication?
+6. An attacker has stolen an employee's password. Explain how MFA stops the attack, and what "number matching" adds.
+7. What are security defaults, and why can they not be used together with Conditional Access?
+8. Describe the structure of a Conditional Access policy (signals, decisions, grant controls) using the example "require MFA when signing in from outside the corporate network."
+9. Why is report-only mode useful when introducing a new Conditional Access policy?
+10. A user with the Contributor role tries to create a VM in a region that an Azure Policy forbids. Will the deployment succeed? Explain which feature decides.
+11. What happens to resources that already violate a newly assigned Azure Policy? Are they deleted?
+12. Distinguish the CanNotDelete lock from the ReadOnly lock. Does a lock stop a user with the Owner role?
+13. A CanNotDelete lock is placed on a storage account. Can a user still delete blobs inside it? Why or why not?
+14. A tag is applied to a resource group. Do the resources inside it automatically have the tag? How can this be made automatic?
+15. Using a scenario, explain the difference between RBAC, Azure Policy, and resource locks.
+16. Where would an organization download Microsoft's audit reports for an external auditor, and which tool gives it a compliance score for its own environment?
+17. Does Azure's ISO 27001 certification mean the customer's own application is automatically ISO 27001 compliant? Explain.
+18. A company needs to discover and classify sensitive data stored in Azure SQL Database, Blob Storage, and an on-premises file server. Which Azure service is designed for this, and how does it differ from Defender for Cloud?
 
-*(Answers to be discussed in class and used as the basis for the Unit 4 question bank extension.)*
+*(Answers to be discussed in class. Practical sessions map to Experiment 7 (Entra ID users and RBAC permissions, with MFA and Conditional Access discussed alongside) and Experiment 9 (create and apply Azure Policy).)*
